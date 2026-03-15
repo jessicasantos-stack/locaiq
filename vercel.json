@@ -1,16 +1,1 @@
-{
-  "crons": [
-    {
-      "path": "/api/cron/score-snapshot",
-      "schedule": "0 0 * * *"
-    },
-    {
-      "path": "/api/cron/weekly-reports",
-      "schedule": "0 9 * * 1"
-    },
-    {
-      "path": "/api/cron/monthly-reports",
-      "schedule": "0 9 1 * *"
-    }
-  ]
-}
+{ }

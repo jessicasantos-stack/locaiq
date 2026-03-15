@@ -1,11 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true,
-  images: {
-    domains: ["lh3.googleusercontent.com", "storage.googleapis.com"],
-  },
-  // Allow Anthropic API calls from server only
-  serverExternalPackages: [],
-};
+  /* Configuração limpa para o deploy passar */
+}
 
-module.exports = nextConfig;
+module.exports = nextConfig

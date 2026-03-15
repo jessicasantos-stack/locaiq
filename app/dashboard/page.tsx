@@ -5,7 +5,7 @@
 // Protected route — redirects to / if not authenticated
 
 import { useEffect, useState } from "react";
-import { getSession } from "@/lib/auth";
+import { getSession } from "../../lib/auth";
 import { useRouter } from "next/navigation";
 
 // Import the main app components

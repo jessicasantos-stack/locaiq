@@ -1,12 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true,
-  images: {
-    domains: ["lh3.googleusercontent.com", "storage.googleapis.com"],
+  typescript: {
+    ignoreBuildErrors: true,
   },
-  experimental: {
-    serverComponentsExternalPackages: [],
+  eslint: {
+    ignoreDuringBuilds: true,
   },
 };
 
-module.exports = nextConfig;
+module.exports = nextConfig

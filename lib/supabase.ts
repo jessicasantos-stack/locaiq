@@ -1,26 +1,7 @@
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
-let _supabase: SupabaseClient | null = null;
-
-function getSupabase(): SupabaseClient {
-        if (!_supabase) {
-                  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-                  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-          if (!supabaseUrl || !supabaseAnonKey) {
-                      throw new Error("Supabase environment variables are not configured");
-          }
-
-          _supabase = createClient(supabaseUrl, supabaseAnonKey);
-        }
-        return _supabase;
-}
-
-export const supabase = new Proxy({} as SupabaseClient, {
-        get(_target, prop) {
-                  return (getSupabase() as any)[prop];
-        },
-});
+// Client-side Supabase — uses auth-helpers to sync session via cookies with middleware
+export const supabase = createClientComponentClient();
 
 // Tipos das tabelas
 export type Agency = {

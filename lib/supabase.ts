@@ -1,10 +1,7 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
-// Client-side Supabase (usa anon key — seguro para o browser)
-export const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+// Client-side Supabase (usa auth-helpers para sincronizar sessão via cookies com o middleware)
+export const supabase = createClientComponentClient();
 
 // Tipos das tabelas
 export type Agency = {

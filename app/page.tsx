@@ -1,18 +1,27 @@
 "use client";
 
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useUser } from "@/components/zenith/contexts/UserContext";
+
 export default function HomePage() {
+  const { user, loading } = useUser();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (loading) return;
+    if (user) {
+      router.replace("/dashboard");
+    } else {
+      router.replace("/login");
+    }
+  }, [user, loading, router]);
+
   return (
-    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#050a14",fontFamily:"system-ui"}}>
-      <div style={{textAlign:"center"}}>
-        <div style={{fontSize:56,fontWeight:900,color:"#3b82f6",marginBottom:12}}>
-          Locaiq
-        </div>
-        <div style={{color:"#64748b",fontSize:16,marginBottom:40}}>
-          Agency Edition - Local SEO Platform 2026
-        </div>
-        <div style={{background:"#0d1829",border:"1px solid #1e3a5f",borderRadius:12,padding:"24px 32px",color:"#10b981",fontWeight:700}}>
-          Next.js running successfully
-        </div>
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#050a14", color: "#e2e8f0", fontFamily: "'Space Grotesk', system-ui" }}>
+      <div style={{ textAlign: "center" }}>
+        <div style={{ fontSize: 38, fontWeight: 900, fontFamily: "var(--font-zenith), 'Orbitron', sans-serif", letterSpacing: 6, background: "linear-gradient(135deg,#3b82f6,#06b6d4)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", marginBottom: 12 }}>ZENITH</div>
+        <div style={{ fontSize: 13, color: "#64748b" }}>Carregando...</div>
       </div>
     </div>
   );

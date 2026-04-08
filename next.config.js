@@ -4,8 +4,9 @@ const nextConfig = {
   images: {
     domains: ["lh3.googleusercontent.com", "storage.googleapis.com"],
   },
-  // Allow Anthropic API calls from server only
-  serverExternalPackages: [],
+  experimental: {
+    serverComponentsExternalPackages: [],
+  },
 };
 
 module.exports = nextConfig;

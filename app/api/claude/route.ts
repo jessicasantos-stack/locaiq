@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { rateLimit } from "@/lib/rate-limit";
 
 // ── /api/claude ──────────────────────────────────────────────
 // API key fica APENAS aqui no servidor — nunca chega ao browser
@@ -12,22 +13,33 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "prompt is required" }, { status: 400 });
     }
 
-    // Rate limiting básico por IP
-    const ip = req.headers.get("x-forwarded-for") || "unknown";
-    // TODO: implementar rate limiting com Upstash Redis se necessário
+    // Rate limiting by IP
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "unknown";
+    const { success, remaining } = rateLimit(ip);
+    if (!success) {
+      return NextResponse.json(
+        { error: "Too many requests. Please wait a moment." },
+        { status: 429, headers: { "Retry-After": "60", "X-RateLimit-Remaining": "0" } }
+      );
+    }
+
+    // Input sanitization
+    const sanitizedPrompt = prompt.slice(0, 10000).trim();
+    const sanitizedSystem = system ? system.slice(0, 5000).trim() : undefined;
+    const clampedTokens = Math.min(Math.max(maxTokens, 50), 4096);
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": process.env.ANTHROPIC_API_KEY!, // ← seguro: server-side only
+        "x-api-key": process.env.ANTHROPIC_API_KEY!,
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-6",
-        max_tokens: maxTokens,
-        ...(system && { system }),
-        messages: [{ role: "user", content: prompt }],
+        max_tokens: clampedTokens,
+        ...(sanitizedSystem && { system: sanitizedSystem }),
+        messages: [{ role: "user", content: sanitizedPrompt }],
       }),
     });
 

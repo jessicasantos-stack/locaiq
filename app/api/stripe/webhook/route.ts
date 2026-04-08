@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
 
   switch (event.type) {
     case "checkout.session.completed": {
-      const session = event.data.object as Stripe.CheckoutSession;
+      const session = event.data.object as Stripe.Checkout.Session;
       const { userId, plan } = session.metadata!;
 
       await supabase.from("agencies").update({
@@ -60,5 +60,4 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ received: true });
 }
 
-// Stripe requires raw body — disable Next.js body parsing
-export const config = { api: { bodyParser: false } };
+// Stripe requires raw body — Next.js App Router reads req.text() natively, no config needed

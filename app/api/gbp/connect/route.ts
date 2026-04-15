@@ -21,7 +21,12 @@ const SCOPES = [
   'https://www.googleapis.com/auth/business.manage',
 ].join(' ');
 
-function getRedirectUri() {
+function getRedirectUri(request?: NextRequest) {
+  if (request) {
+    const proto = request.headers.get('x-forwarded-proto') || 'https';
+    const host = request.headers.get('host') || 'localhost:3000';
+    return `${proto}://${host}/api/gbp/connect`;
+  }
   const base = process.env.NEXT_PUBLIC_URL || 'http://localhost:3000';
   return `${base}/api/gbp/connect`;
 }
@@ -48,7 +53,7 @@ export async function POST(request: NextRequest) {
     // Build OAuth URL
     const params = new URLSearchParams({
       client_id: clientId,
-      redirect_uri: getRedirectUri(),
+      redirect_uri: getRedirectUri(request),
       response_type: 'code',
       scope: SCOPES,
       access_type: 'offline',      // gets refresh_token
@@ -98,7 +103,7 @@ export async function GET(request: NextRequest) {
         code,
         client_id: clientId,
         client_secret: clientSecret,
-        redirect_uri: getRedirectUri(),
+        redirect_uri: getRedirectUri(request),
         grant_type: 'authorization_code',
       }),
     });
@@ -137,5 +142,27 @@ export async function GET(request: NextRequest) {
     console.error('[GBP Callback Error]', error);
     const base = process.env.NEXT_PUBLIC_URL || 'http://localhost:3000';
     return NextResponse.redirect(`${base}/dashboard?gbp_error=unknown`);
+  }
+}
+
+// ── DELETE: Clear old tokens (force reconnect) ────────────────
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const supabase = createRouteHandlerClient({ cookies });
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+    }
+
+    await supabase
+      .from('google_tokens')
+      .delete()
+      .eq('user_id', session.user.id);
+
+    return NextResponse.json({ success: true, message: 'Tokens removidos. Reconecte sua conta Google.' });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

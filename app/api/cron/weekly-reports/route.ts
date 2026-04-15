@@ -19,65 +19,54 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = createRouteHandlerClient({ cookies });
 
-    // Get all agencies
-    const { data: agencies, error: agenciesError } = await supabase
-      .from('agencies')
-      .select('id, name, user_id');
+    // Get all clients
+    const { data: clients, error: clientsError } = await supabase
+      .from('clients')
+      .select('id, agency_id, name');
 
-    if (agenciesError) throw agenciesError;
-    if (!agencies || agencies.length === 0) {
-      return NextResponse.json({ message: 'No agencies found', reports: 0 });
+    if (clientsError) throw clientsError;
+    if (!clients || clients.length === 0) {
+      return NextResponse.json({ message: 'No clients found', reports: 0 });
     }
 
     let created = 0;
+    let errors = 0;
 
-    for (const agency of agencies) {
-      // Get client count and recent score data
-      const { count: clientCount } = await supabase
-        .from('clients')
-        .select('id', { count: 'exact', head: true })
-        .eq('agency_id', agency.id);
+    // Gera relatório pra cada cliente
+    for (const client of clients) {
+      try {
+        // Chama a API de geração de relatório
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/reports/generate-weekly`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${process.env.CRON_SECRET}`,
+            },
+            body: JSON.stringify({
+              client_id: client.id,
+            }),
+          }
+        );
 
-      // Get last 7 days of score history
-      const weekAgo = new Date();
-      weekAgo.setDate(weekAgo.getDate() - 7);
-
-      const { data: scores } = await supabase
-        .from('score_history')
-        .select('overall_score, client_id, snapshot_date')
-        .eq('is_real', true)
-        .gte('snapshot_date', weekAgo.toISOString().split('T')[0])
-        .in('client_id', (
-          await supabase.from('clients').select('id').eq('agency_id', agency.id)
-        ).data?.map(c => c.id) || []);
-
-      const avgScore = scores && scores.length > 0
-        ? Math.round(scores.reduce((s, r) => s + r.overall_score, 0) / scores.length)
-        : 0;
-
-      // Create weekly digest event
-      const { error: eventError } = await supabase.from('events').insert({
-        agency_id: agency.id,
-        client_id: null,
-        type: 'weekly_digest',
-        level: 'info',
-        title: `Weekly Report — ${clientCount || 0} clients, avg score ${avgScore}`,
-        detail: `Weekly digest generated automatically.`,
-        metadata: {
-          client_count: clientCount || 0,
-          avg_score: avgScore,
-          period: 'weekly',
-          generated_at: new Date().toISOString(),
-        },
-      });
-
-      if (!eventError) created++;
+        if (response.ok) {
+          created++;
+        } else {
+          errors++;
+          console.error(`[Cron] Failed to generate report for client ${client.id}`);
+        }
+      } catch (error) {
+        errors++;
+        console.error(`[Cron] Error generating report for client ${client.id}:`, error);
+      }
     }
 
     return NextResponse.json({
-      message: 'Weekly reports generated',
-      agencies: agencies.length,
+      message: 'Weekly reports generation completed',
+      total_clients: clients.length,
       reports_created: created,
+      errors: errors,
     });
   } catch (error: any) {
     console.error('[Cron: weekly-reports]', error);

@@ -104,7 +104,8 @@ export async function GET(request: NextRequest) {
     try {
       tokens = await getValidTokens(user.id);
     } catch (e: any) {
-      if (e.message === 'NO_TOKENS') {
+      const msg = (e.message || '').toLowerCase();
+      if (e.message === 'NO_TOKENS' || msg.includes('invalid_client') || msg.includes('invalid_grant') || msg.includes('token') || msg.includes('refresh')) {
         return NextResponse.json(
           { error: 'Google não conectado. Conecte sua conta Google primeiro.', code: 'NO_GOOGLE_AUTH' },
           { status: 403 }
@@ -196,6 +197,14 @@ export async function GET(request: NextRequest) {
     }
   } catch (error: any) {
     console.error('[GBP API Error]', error);
+    const msg = (error.message || '').toLowerCase();
+    // Treat auth/quota errors as "needs reconnect"
+    if (msg.includes('invalid_client') || msg.includes('invalid_grant') || msg.includes('quota') || msg.includes('resource_exhausted') || msg.includes('429')) {
+      return NextResponse.json(
+        { error: 'API do Google não disponível. Verifique se as APIs estão ativadas no Google Cloud Console.', code: 'NO_GOOGLE_AUTH' },
+        { status: 403 }
+      );
+    }
     return NextResponse.json(
       { error: error.message || 'Erro interno do servidor' },
       { status: 500 }
@@ -219,7 +228,8 @@ export async function POST(request: NextRequest) {
     try {
       tokens = await getValidTokens(user.id);
     } catch (e: any) {
-      if (e.message === 'NO_TOKENS') {
+      const msg = (e.message || '').toLowerCase();
+      if (e.message === 'NO_TOKENS' || msg.includes('invalid_client') || msg.includes('invalid_grant') || msg.includes('token') || msg.includes('refresh')) {
         return NextResponse.json(
           { error: 'Google não conectado.', code: 'NO_GOOGLE_AUTH' },
           { status: 403 }

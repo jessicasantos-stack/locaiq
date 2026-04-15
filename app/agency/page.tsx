@@ -79,7 +79,8 @@ export default function AgencyPage() {
           setClients?.(allClients);
         }
       } catch (e: any) {
-        if (e.code === "NO_GOOGLE_AUTH") {
+        const msg = (e.message || "").toLowerCase();
+        if (e.code === "NO_GOOGLE_AUTH" || msg.includes("invalid_client") || msg.includes("invalid_grant") || msg.includes("token") || msg.includes("quota") || e.status === 429) {
           setIsConnected(false);
         } else {
           setError(e.message || "Failed to load GBP data");
